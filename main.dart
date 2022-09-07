@@ -54,7 +54,7 @@ class MapSampleState extends State<MapSample> {
     return Expanded(
         child: SizedBox(
       width: 1000,
-      height: 900,
+      height: 800,
       child: Scaffold(
         key: _scaffoldKey,
         resizeToAvoidBottomInset: false,

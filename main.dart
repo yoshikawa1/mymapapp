@@ -70,51 +70,26 @@ class MapSampleState extends State<MapSample> {
     ));
   }
 
-  markerTapped(Place place) {
-    setState(() {});
-  }
-
   void createMarkers() async {
-    Set<Marker> markers = await getMarkers(markerTapped);
+    final storesStream =
+        await FirebaseFirestore.instance.collection('maps').get();
+    Set<Marker> __markers = {};
+    int key = 0;
+    for (var document in storesStream.docs) {
+      //現在曜日時間を取得
+      //現在曜日のフィールドを取得
+      //閉鎖
+      GeoPoint latLng = document['latLng'];
+      __markers.add(Marker(
+        markerId: MarkerId(key.toString()),
+        position: LatLng(latLng.latitude, latLng.longitude),
+        infoWindow:
+            InfoWindow(title: document['name'], snippet: document['note']),
+      ));
+      key++;
+    }
     setState(() {
-      _markers = markers;
+      _markers = __markers;
     });
   }
-}
-
-Future<Set<Marker>> getMarkers(void Function(Place) callback) async {
-  Set<Place> places = await getPlaces();
-  Set<Marker> markers = {};
-  places.toList().asMap().forEach((k, v) {
-    markers.add(Marker(
-      markerId: MarkerId(k.toString()),
-      position: v.latlng,
-      onTap: () => callback(v),
-      infoWindow: InfoWindow(title: v.name, snippet: v.info),
-    ));
-  });
-  return markers;
-}
-
-// DBから取得
-Future<Set<Place>> getPlaces() async {
-  final storesStream =
-      await FirebaseFirestore.instance.collection('maps').get();
-  Set<Place> places = {};
-  for (var document in storesStream.docs) {
-    GeoPoint latLng = document['latLng'];
-    places.add(Place(
-      name: document['name'],
-      info: document['note'],
-      latlng: LatLng(latLng.latitude, latLng.longitude),
-    ));
-  }
-  return places;
-}
-
-class Place {
-  LatLng latlng;
-  String name;
-  String info;
-  Place({this.name = "", this.info = "", this.latlng = const LatLng(0, 0)});
 }

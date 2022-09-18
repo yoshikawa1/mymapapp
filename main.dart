@@ -34,11 +34,15 @@ class MapSampleState extends State<MapSample> {
     zoom: 15,
   );
   Set<Marker> _markers = {};
+  String _drawer_name = "";
+  String _drawer_info = "";
+  String _drawer_lat = "";
+  String _drawer_lng = "";
 
   @override
   void initState() {
     super.initState();
-    createMarkers();
+    createMarkers(marker_tapped);
   }
 
   @override
@@ -58,6 +62,7 @@ class MapSampleState extends State<MapSample> {
       child: Scaffold(
         key: _scaffoldKey,
         resizeToAvoidBottomInset: false,
+        drawer: MapDrawer(),
         body: GoogleMap(
           mapType: MapType.normal,
           initialCameraPosition: _kGooglePlex,
@@ -70,7 +75,39 @@ class MapSampleState extends State<MapSample> {
     ));
   }
 
-  void createMarkers() async {
+  MapDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          ListTile(
+            title: Text("name: ${_drawer_name}"),
+          ),
+          ListTile(
+            title: Text("info: ${_drawer_info}"),
+          ),
+          ListTile(
+            title: Text("latitude: ${_drawer_lat}"),
+          ),
+          ListTile(
+            title: Text("longitude: ${_drawer_lng}"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  marker_tapped(Place place) {
+    setState(() {
+      _drawer_name = place.name;
+      _drawer_info = place.info;
+      _drawer_lat = place.latlng.latitude.toString();
+      _drawer_lng = place.latlng.longitude.toString();
+    });
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  void createMarkers(void Function(Place) callback) async {
     final storesStream =
         await FirebaseFirestore.instance.collection('maps').get();
     Set<Marker> __markers = {};
@@ -80,11 +117,16 @@ class MapSampleState extends State<MapSample> {
       //現在曜日のフィールドを取得
       //閉鎖
       GeoPoint latLng = document['latLng'];
+      Place place = Place(
+        name: document['name'],
+        info: document['note'],
+        latlng: LatLng(latLng.latitude, latLng.longitude),
+      );
+
       __markers.add(Marker(
         markerId: MarkerId(key.toString()),
         position: LatLng(latLng.latitude, latLng.longitude),
-        infoWindow:
-            InfoWindow(title: document['name'], snippet: document['note']),
+        onTap: () => callback(place),
       ));
       key++;
     }
@@ -92,4 +134,11 @@ class MapSampleState extends State<MapSample> {
       _markers = __markers;
     });
   }
+}
+
+class Place {
+  LatLng latlng;
+  String name;
+  String info;
+  Place({this.name = "", this.info = "", this.latlng = const LatLng(0, 0)});
 }

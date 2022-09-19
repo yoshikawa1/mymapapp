@@ -28,7 +28,8 @@ class MapSample extends StatefulWidget {
 }
 
 class MapSampleState extends State<MapSample> {
-  LatLng _initialPosition = LatLng(34.78, 135.42);
+  late LatLng _initialPosition;
+  late bool _loading;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final Completer<GoogleMapController> _controller = Completer();
@@ -49,6 +50,7 @@ class MapSampleState extends State<MapSample> {
   @override
   void initState() {
     super.initState();
+    _loading = true;
     _getUserLocation();
     createMarkers(marker_tapped);
   }
@@ -78,6 +80,7 @@ class MapSampleState extends State<MapSample> {
     var position = await Geolocator.getCurrentPosition();
     setState(() {
       _initialPosition = LatLng(position.latitude, position.longitude);
+      _loading = false;
       print(position);
     });
   }
@@ -86,19 +89,31 @@ class MapSampleState extends State<MapSample> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      resizeToAvoidBottomInset: false,
       drawer: MapDrawer(),
-      body: GoogleMap(
-        mapType: MapType.normal,
-        initialCameraPosition: CameraPosition(
-          target: _initialPosition,
-          zoom: 15,
-        ),
-        markers: _markers,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
-      ),
+      body: _loading
+          ? CircularProgressIndicator()
+          : SafeArea(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _initialPosition,
+                      zoom: 14.4746,
+                    ),
+                    markers: _markers,
+                    onMapCreated: (GoogleMapController controller) {
+                      _controller.complete(controller);
+                    },
+                    // markers: _createMarker(),
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    mapToolbarEnabled: false,
+                    buildingsEnabled: true,
+                  ),
+                ],
+              ),
+            ),
     );
   }
 

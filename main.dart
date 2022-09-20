@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:geolocator/geolocator.dart';
 
 Future<void> main() async {
-  // Fireabse初期化
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(MyApp());
@@ -30,7 +29,6 @@ class MapSample extends StatefulWidget {
 class MapSampleState extends State<MapSample> {
   late LatLng _initialPosition;
   late bool _loading;
-
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final Completer<GoogleMapController> _controller = Completer();
   Set<Marker> _markers = {};
@@ -52,7 +50,7 @@ class MapSampleState extends State<MapSample> {
     super.initState();
     _loading = true;
     _getUserLocation();
-    createMarkers(marker_tapped);
+    _createMarkers(marker_tapped);
   }
 
   void _getUserLocation() async {
@@ -81,7 +79,6 @@ class MapSampleState extends State<MapSample> {
     setState(() {
       _initialPosition = LatLng(position.latitude, position.longitude);
       _loading = false;
-      print(position);
     });
   }
 
@@ -91,7 +88,7 @@ class MapSampleState extends State<MapSample> {
       key: _scaffoldKey,
       drawer: MapDrawer(),
       body: _loading
-          ? CircularProgressIndicator()
+          ? const CircularProgressIndicator()
           : SafeArea(
               child: Stack(
                 fit: StackFit.expand,
@@ -99,13 +96,12 @@ class MapSampleState extends State<MapSample> {
                   GoogleMap(
                     initialCameraPosition: CameraPosition(
                       target: _initialPosition,
-                      zoom: 14.4746,
+                      zoom: 15,
                     ),
                     markers: _markers,
                     onMapCreated: (GoogleMapController controller) {
                       _controller.complete(controller);
                     },
-                    // markers: _createMarker(),
                     myLocationEnabled: true,
                     myLocationButtonEnabled: true,
                     mapToolbarEnabled: false,
@@ -123,33 +119,33 @@ class MapSampleState extends State<MapSample> {
         padding: EdgeInsets.zero,
         children: [
           ListTile(
-            title: Text("${_drawer_name}"),
+            title: Text(_drawer_name),
           ),
           ListTile(
             title: Text('''設置場所
-${_drawer_place}'''),
+$_drawer_place'''),
           ),
           ListTile(
             title: Text('''営業時間
-月曜日 : ${_drawer_monday}
-火曜日 : ${_drawer_tuesday}
-水曜日 : ${_drawer_wednesday}
-木曜日 : ${_drawer_thursday}
-金曜日 : ${_drawer_friday}
-土曜日 : ${_drawer_saturday}
-日曜日 : ${_drawer_sunday}'''),
+月曜日 : $_drawer_monday
+火曜日 : $_drawer_tuesday
+水曜日 : $_drawer_wednesday
+木曜日 : $_drawer_thursday
+金曜日 : $_drawer_friday
+土曜日 : $_drawer_saturday
+日曜日 : $_drawer_sunday'''),
           ),
           ListTile(
             title: Text('''住所
-${_drawer_address}'''),
+$_drawer_address'''),
           ),
           ListTile(
             title: Text('''電話番号
-${_drawer_tel}'''),
+$_drawer_tel'''),
           ),
           ListTile(
             title: Text('''備考
-${_drawer_note}'''),
+$_drawer_note'''),
           ),
         ],
       ),
@@ -174,16 +170,62 @@ ${_drawer_note}'''),
     _scaffoldKey.currentState?.openDrawer();
   }
 
-  void createMarkers(void Function(Place) callback) async {
+  void _createMarkers(void Function(Place) callback) async {
     final storesStream =
         await FirebaseFirestore.instance.collection('maps').get();
     Set<Marker> __markers = {};
     int key = 0;
     for (var document in storesStream.docs) {
-      //現在曜日時間を取得
-      //現在曜日のフィールドを取得
-      //閉鎖
-      GeoPoint latLng = document['latLng'];
+      var now = DateTime.now();
+      String businessHour = "";
+      double makerColor;
+
+      switch (now.weekday) {
+        case 0:
+          businessHour = document['sunday'];
+          break;
+        case 1:
+          businessHour = document['monday'];
+          break;
+        case 2:
+          businessHour = document['tuesday'];
+          break;
+        case 3:
+          businessHour = document['wednesday'];
+          break;
+        case 4:
+          businessHour = document['thursday'];
+          break;
+        case 5:
+          businessHour = document['friday'];
+          break;
+        case 6:
+          businessHour = document['saturday'];
+          break;
+        default:
+      }
+
+      //営業中か判定
+      if (businessHour == "") {
+        makerColor = BitmapDescriptor.hueBlue;
+      } else {
+        var splitTime = businessHour.split("～");
+        String openHour = splitTime[0].split(":")[0];
+        String openMinute = splitTime[0].split(":")[1];
+        String closeHour = splitTime[1].split(":")[0];
+        String closeMinute = splitTime[1].split(":")[1];
+        DateTime openTime = DateTime(now.year, now.month, now.day,
+            int.parse(openHour), int.parse(openMinute));
+        DateTime closeTime = DateTime(now.year, now.month, now.day,
+            int.parse(closeHour), int.parse(closeMinute));
+
+        if (openTime.isBefore(now) & now.isBefore(closeTime)) {
+          makerColor = BitmapDescriptor.hueRed;
+        } else {
+          makerColor = BitmapDescriptor.hueAzure;
+        }
+      }
+
       Place place = Place(
         name: document['name'],
         place: document['place'],
@@ -199,7 +241,9 @@ ${_drawer_note}'''),
         note: document['note'],
       );
 
+      GeoPoint latLng = document['latLng'];
       __markers.add(Marker(
+        icon: BitmapDescriptor.defaultMarkerWithHue(makerColor),
         markerId: MarkerId(key.toString()),
         position: LatLng(latLng.latitude, latLng.longitude),
         onTap: () => callback(place),
@@ -212,6 +256,7 @@ ${_drawer_note}'''),
   }
 }
 
+//ドロワーで使用
 class Place {
   String name;
   String place;

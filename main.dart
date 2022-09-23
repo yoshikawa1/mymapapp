@@ -4,10 +4,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  MobileAds.instance.initialize();
   runApp(MyApp());
 }
 
@@ -48,13 +50,27 @@ class MapSampleState extends State<MapSample> {
   static const double textSmall = 8;
   static const double textMedium = 12;
   static const double textLarge = 18;
+  late BannerAd myBanner;
 
   @override
   void initState() {
     super.initState();
     _loading = true;
+    _setBanner();
     _getUserLocation();
     _createMarkers(marker_tapped);
+  }
+
+  void _setBanner() async {
+    // バナー広告をインスタンス化
+    myBanner = BannerAd(
+        adUnitId:
+            "ca-app-pub-3940256099942544/2934735716", // Androidのデモ用バナー広告ID
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: const BannerAdListener());
+    // バナー広告の読み込み
+    myBanner.load();
   }
 
   void _getUserLocation() async {
@@ -111,6 +127,7 @@ class MapSampleState extends State<MapSample> {
                     mapToolbarEnabled: false,
                     buildingsEnabled: true,
                   ),
+                  AdWidget(ad: myBanner)
                 ],
               ),
             ),

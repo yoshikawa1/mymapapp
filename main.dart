@@ -44,6 +44,10 @@ class MapSampleState extends State<MapSample> {
   String _drawer_address = "";
   String _drawer_tel = "";
   String _drawer_note = "";
+  String _drawer_quote = "";
+  static const double textSmall = 8;
+  static const double textMedium = 12;
+  static const double textLarge = 18;
 
   @override
   void initState() {
@@ -116,14 +120,19 @@ class MapSampleState extends State<MapSample> {
   MapDrawer() {
     return Drawer(
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(top: 18),
         children: [
           ListTile(
-            title: Text(_drawer_name),
+            title: Text(
+              _drawer_name,
+              style: const TextStyle(fontSize: textLarge),
+            ),
           ),
           ListTile(
-            title: Text('''設置場所
-$_drawer_place'''),
+            title: Text(
+              '''設置場所
+$_drawer_place''',
+            ),
           ),
           ListTile(
             title: Text('''営業時間
@@ -147,6 +156,10 @@ $_drawer_tel'''),
             title: Text('''備考
 $_drawer_note'''),
           ),
+          ListTile(
+            title: Text('''引用
+$_drawer_quote'''),
+          ),
         ],
       ),
     );
@@ -166,6 +179,7 @@ $_drawer_note'''),
       _drawer_address = place.address;
       _drawer_tel = place.tel;
       _drawer_note = place.note;
+      _drawer_quote = place.quote;
     });
     _scaffoldKey.currentState?.openDrawer();
   }
@@ -177,52 +191,57 @@ $_drawer_note'''),
     int key = 0;
     for (var document in storesStream.docs) {
       var now = DateTime.now();
-      String businessHour = "";
+      String businessHours = "";
       double makerColor;
 
       switch (now.weekday) {
         case 0:
-          businessHour = document['sunday'];
+          businessHours = document['sunday'];
           break;
         case 1:
-          businessHour = document['monday'];
+          businessHours = document['monday'];
           break;
         case 2:
-          businessHour = document['tuesday'];
+          businessHours = document['tuesday'];
           break;
         case 3:
-          businessHour = document['wednesday'];
+          businessHours = document['wednesday'];
           break;
         case 4:
-          businessHour = document['thursday'];
+          businessHours = document['thursday'];
           break;
         case 5:
-          businessHour = document['friday'];
+          businessHours = document['friday'];
           break;
         case 6:
-          businessHour = document['saturday'];
+          businessHours = document['saturday'];
           break;
         default:
       }
 
       //営業中か判定
-      if (businessHour == "") {
-        makerColor = BitmapDescriptor.hueBlue;
+      if (businessHours == "-") {
+        makerColor = BitmapDescriptor.hueAzure;
+      } else if (businessHours == "") {
+        makerColor = BitmapDescriptor.hueGreen;
       } else {
-        var splitTime = businessHour.split("～");
-        String openHour = splitTime[0].split(":")[0];
-        String openMinute = splitTime[0].split(":")[1];
-        String closeHour = splitTime[1].split(":")[0];
-        String closeMinute = splitTime[1].split(":")[1];
-        DateTime openTime = DateTime(now.year, now.month, now.day,
-            int.parse(openHour), int.parse(openMinute));
-        DateTime closeTime = DateTime(now.year, now.month, now.day,
-            int.parse(closeHour), int.parse(closeMinute));
+        var businessHourSplit = businessHours.split(",");
+        makerColor = BitmapDescriptor.hueAzure;
+        for (var businessHour in businessHourSplit) {
+          var splitTime = businessHour.split("～");
+          String openHour = splitTime[0].split(":")[0];
+          String openMinute = splitTime[0].split(":")[1];
+          String closeHour = splitTime[1].split(":")[0];
+          String closeMinute = splitTime[1].split(":")[1];
+          DateTime openTime = DateTime(now.year, now.month, now.day,
+              int.parse(openHour), int.parse(openMinute));
+          DateTime closeTime = DateTime(now.year, now.month, now.day,
+              int.parse(closeHour), int.parse(closeMinute));
 
-        if (openTime.isBefore(now) & now.isBefore(closeTime)) {
-          makerColor = BitmapDescriptor.hueRed;
-        } else {
-          makerColor = BitmapDescriptor.hueAzure;
+          if (openTime.isBefore(now) & now.isBefore(closeTime)) {
+            makerColor = BitmapDescriptor.hueRed;
+            break;
+          }
         }
       }
 
@@ -239,13 +258,13 @@ $_drawer_note'''),
         address: document['address'],
         tel: document['tel'],
         note: document['note'],
+        quote: document['quote'],
       );
 
-      GeoPoint latLng = document['latLng'];
       __markers.add(Marker(
         icon: BitmapDescriptor.defaultMarkerWithHue(makerColor),
         markerId: MarkerId(key.toString()),
-        position: LatLng(latLng.latitude, latLng.longitude),
+        position: LatLng(document['lat'], document['lng']),
         onTap: () => callback(place),
       ));
       key++;
@@ -270,6 +289,7 @@ class Place {
   String address;
   String tel;
   String note;
+  String quote;
   Place(
       {this.name = "",
       this.place = "",
@@ -282,5 +302,6 @@ class Place {
       this.sunday = "",
       this.address = "",
       this.tel = "",
-      this.note = ""});
+      this.note = "",
+      this.quote = ""});
 }

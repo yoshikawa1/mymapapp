@@ -104,34 +104,49 @@ class MapSampleState extends State<MapSample> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: MapDrawer(),
-      body: _loading
-          ? const CircularProgressIndicator()
-          : SafeArea(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _initialPosition,
-                      zoom: 15,
-                    ),
-                    markers: _markers,
-                    onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
-                    },
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    mapToolbarEnabled: false,
-                    buildingsEnabled: true,
-                  ),
-                  AdWidget(ad: myBanner)
-                ],
-              ),
-            ),
+    return Column(
+      children: [
+        MapContainer(),
+        Container(
+          height: 60,
+          child: AdWidget(ad: myBanner),
+        ),
+      ],
     );
+  }
+
+  MapContainer() {
+    return Expanded(
+        child: Container(
+            width: 1000,
+            height: 1500,
+            child: Scaffold(
+              key: _scaffoldKey,
+              drawer: MapDrawer(),
+              body: _loading
+                  ? const CircularProgressIndicator()
+                  : SafeArea(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: _initialPosition,
+                              zoom: 15,
+                            ),
+                            markers: _markers,
+                            onMapCreated: (GoogleMapController controller) {
+                              _controller.complete(controller);
+                            },
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: true,
+                            mapToolbarEnabled: false,
+                            buildingsEnabled: true,
+                          ),
+                        ],
+                      ),
+                    ),
+            )));
   }
 
   MapDrawer() {

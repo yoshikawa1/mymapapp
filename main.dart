@@ -227,9 +227,6 @@ $_drawer_quote'''),
       double makerColor;
 
       switch (now.weekday) {
-        case 0:
-          businessHours = document['sunday'];
-          break;
         case 1:
           businessHours = document['monday'];
           break;
@@ -247,6 +244,9 @@ $_drawer_quote'''),
           break;
         case 6:
           businessHours = document['saturday'];
+          break;
+        case 7:
+          businessHours = document['sunday'];
           break;
         default:
       }

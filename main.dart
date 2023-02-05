@@ -258,7 +258,8 @@ $_drawer_quote'''),
       if (businessHours == "-") {
         makerColor = BitmapDescriptor.hueAzure;
       } else if (businessHours == "") {
-        makerColor = BitmapDescriptor.hueGreen;
+        //判定不可の場合も利用不可と同じ色としている
+        makerColor = BitmapDescriptor.hueAzure;
       } else {
         var businessHourSplit = businessHours.split(",");
         makerColor = BitmapDescriptor.hueAzure;
